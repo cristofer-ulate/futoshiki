@@ -7,6 +7,7 @@ from datetime import datetime
 import PyPDF2
 from datetime import datetime, timedelta
 import math
+import random #uso del modulo random
 
 
 
@@ -65,6 +66,23 @@ def guardaDatosConfiguracion(CheckNivel, CheckHoras, CheckPosicion,txtHora,txtMi
     #se refresca el diccionario de la configuracion
     dic_configuracion = actualizar_dic_configuracion()
     print("despues",dic_configuracion)
+
+def guardaPartidasArchivo():
+    partidasFacil = list()
+    partidasFacil = [((">", 0, 0), (">", 0, 2), (">", 0, 3), ("4", 1, 0), ("2", 1, 4), ("4", 2, 2), ("<", 3, 3), ("4", 3, 4), ("<", 4, 0), ("<", 4, 1))]
+
+    partidasIntermedio = list()
+    partidasIntermedio = []
+
+    partidasDificil = list()
+    partidasDificil = [((">", 0, 0), (">", 0, 2), (">", 0, 3), ("4", 1, 0), ("2", 1, 4), ("4", 2, 2), ("<", 3, 3), ("4", 3, 4), ("<", 4, 0), ("<", 4, 1))]
+    
+    #se guardan los datos de las partidas en el archivo
+    f=open("futoshiki2021partidas.dat","wb")
+    pickle.dump(partidasFacil,f)
+    pickle.dump(partidasIntermedio,f)
+    pickle.dump(partidasDificil,f)
+    f.close()
     
                                                                                                                                                                            
 #Funcion para realizar la lectura de los distintos archivos y cargar la informacion en las listas y diccionarios
@@ -185,7 +203,113 @@ def configuracion():
     btnCancelar.grid(row=8,column=1)
 
     ventanaConfig.mainloop()
-  
+
+def leer_partidas():
+    partidasFacil = list()
+    partidasIntermedio = list()
+    partidasDificil = list()
+    
+    f=open("futoshiki2021partidas.dat","rb")
+    while True:
+        try:
+            partidasFacil=pickle.load(f)
+            partidasIntermedio=pickle.load(f)
+            partidasDificil=pickle.load(f)
+        except EOFError:
+            break
+    f.close()
+    return partidasFacil,partidasIntermedio,partidasDificil
+
+    
+
+# lee el archivo de partidas
+def obtener_partida(nivel):
+    partidas = leer_partidas()
+    if nivel == 0:
+        cantidadPartidas = len(partidas[0])
+        if cantidadPartidas == 0:
+            return None
+        else:
+            aleatorio = random.randint(0,cantidadPartidas - 1)
+            return partidas[0][aleatorio]
+    elif nivel == 1:
+        cantidadPartidas = len(partidas[1])
+        if cantidadPartidas == 0:
+            return None
+        else:
+            aleatorio = random.randint(0,cantidadPartidas - 1)
+            return partidas[1][aleatorio]
+    else:
+        cantidadPartidas = len(partidas[2])
+        if cantidadPartidas == 0:
+            return None
+        else:
+            aleatorio = random.randint(0,cantidadPartidas - 1)
+            return partidas[2][aleatorio]
+        
+    
+
+def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3,n4,n5):
+    n1.configure(background = "SystemButtonFace")
+    n2.configure(background = "SystemButtonFace")
+    n3.configure(background = "SystemButtonFace")
+    n4.configure(background = "SystemButtonFace")
+    n5.configure(background = "SystemButtonFace")
+
+    caller = event.widget
+
+    if nueva_seleccion != num_seleccionado[0]:
+        num_seleccionado[0] = nueva_seleccion
+        
+        caller.configure(background = "green")
+    else:
+        caller = event.widget
+        caller.configure(background = "SystemButtonFace")
+        num_seleccionado[0] = 0
+
+def seleccion_tablero(event,num_seleccionado):
+    caller = event.widget
+    caller.configure(text = num_seleccionado[0])
+
+def cargar_tablero(ventanaJuego,partida,num_seleccionado):
+    listaBotones = []
+    cont = 0
+    fila = 3
+    col = 0
+    for i in range(5):
+        col = 0
+        for j in range(5):
+            cont += 1
+            btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
+            btn.grid(row=fila,column=col)
+            btn.bind("<1>",lambda event:seleccion_tablero(event,num_seleccionado))          
+            listaBotones += [ btn ] 
+            #if j == 2:
+            #    listaBotones += [ tk.Label(text=">")]
+            #listaBotones[-1].grid(row=fila,column=col)
+            col += 1
+        fila += 1
+    
+    
+
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado):
+    if not txtNombre.get().isalpha():
+        messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE VÁLIDO")
+        return
+    if partida == None:
+        messagebox.showerror(parent=ventanaJuego,title="Error", message="NO HAY PARTIDAS PARA ESTE NIVEL")
+        ventanaJuego.destroy()
+        return
+
+    # se carga la partida
+    cargar_tablero(ventanaJuego,partida,num_seleccionado)
+        
+
+    # se deshabilita el boton
+    caller = event.widget
+    caller.configure(state = "disabled")
+    
+        
 
 
 #VENTANA JUEGO:
@@ -194,6 +318,9 @@ def configuracion():
 #Salidas: ninguna
 def juego():
     dic_configuracion = actualizar_dic_configuracion()
+    partida = obtener_partida(dic_configuracion["nivel"]) # se obtiene la partida segun el nivel configurado por el usuario
+    num_seleccionado = [0]
+    
     lista_nivel = ["FÁCIL", "INTERMEDIO", "DIFÍCIL"]
     ventanaJuego = tk.Toplevel()
     ventanaJuego.title("FUTOSHIKI")
@@ -204,13 +331,13 @@ def juego():
     lblNivel.grid(row=1,column=5)
 
     lblNombre = tk.Label(ventanaJuego, text="Nombre del jugador:")
-    lblNombre.grid(row=2,column=0)
+    lblNombre.grid(row=2,column=50)
     txtNombre = tk.StringVar()
     entryNombre = tk.Entry(ventanaJuego,textvariable=txtNombre)
-    entryNombre.grid(row=2,column=1)
+    entryNombre.grid(row=2,column=51)
 
     
-    # CUADRICULA
+    # CUADRICULA INICIAL
     listaBotones = []
     cont = 0
     fila = 3
@@ -219,22 +346,36 @@ def juego():
         col = 0
         for j in range(5):
             cont += 1
-            
-            
-            btn = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5,padx=5,pady=5).grid(row=fila,column=col)
-                      
+            btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5,state="disabled")
+            btn.grid(row=fila,column=col)
+            #btn.bind("<1>",lambda event:seleccion_tablero(event,num_seleccionado))          
             listaBotones += [ btn ] 
             #if j == 2:
             #    listaBotones += [ tk.Label(text=">")]
             #listaBotones[-1].grid(row=fila,column=col)
-        
             col += 1
         fila += 1
+        
+    n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
+    n1.grid(row=3,column=7)
+    n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
+    n2.grid(row=4,column=7)
+    n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
+    n3.grid(row=5,column=7)
+    n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
+    n4.grid(row=6,column=7)
+    n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
+    n5.grid(row=7,column=7)
+
+    n1.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,1,num_seleccionado,n1,n2,n3,n4,n5))
+    n2.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,2,num_seleccionado,n1,n2,n3,n4,n5))
+    n3.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,3,num_seleccionado,n1,n2,n3,n4,n5))
+    n4.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,4,num_seleccionado,n1,n2,n3,n4,n5))
+    n5.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,5,num_seleccionado,n1,n2,n3,n4,n5))
     
-
-
     # Botones
     btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red")
+    btnIniciar.bind("<1>",lambda event:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado))
     btnIniciar.grid(row=8,column=0)
 
     btnBorrarJugada = tk.Button(ventanaJuego, text="BORRAR JUGADA", bg="cyan")
