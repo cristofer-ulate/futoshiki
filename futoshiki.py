@@ -69,13 +69,14 @@ def guardaDatosConfiguracion(CheckNivel, CheckHoras, CheckPosicion,txtHora,txtMi
 
 def guardaPartidasArchivo():
     partidasFacil = list()
-    partidasFacil = [((">", 0, 0), (">", 0, 2), (">", 0, 3), ("4", 1, 0), ("2", 1, 4), ("4", 2, 2), ("<", 3, 3), ("4", 3, 4), ("<", 4, 0), ("<", 4, 1))]
+    partidasFacil = [((">", 0, 1), (">", 0, 5), (">", 0, 7),("4", 1, 0), ("2", 1, 8), ("4", 2, 4), ("<", 3, 7), ("4", 3, 8), ("<", 4, 1), ("<", 4, 3))]
+
 
     partidasIntermedio = list()
     partidasIntermedio = []
 
     partidasDificil = list()
-    partidasDificil = [((">", 0, 0), (">", 0, 2), (">", 0, 3), ("4", 1, 0), ("2", 1, 4), ("4", 2, 2), ("<", 3, 3), ("4", 3, 4), ("<", 4, 0), ("<", 4, 1))]
+    partidasDificil = [((">", 0, 1), (">", 0, 5), (">", 0, 7),("4", 1, 0), ("2", 1, 8), ("4", 2, 4), ("<", 3, 7), ("4", 3, 8), ("<", 4, 1), ("<", 4, 3))]
     
     #se guardan los datos de las partidas en el archivo
     f=open("futoshiki2021partidas.dat","wb")
@@ -267,47 +268,103 @@ def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3
         caller.configure(background = "SystemButtonFace")
         num_seleccionado[0] = 0
 
-def seleccion_tablero(event,num_seleccionado):
-    caller = event.widget
-    caller.configure(text = num_seleccionado[0])
+def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla):
+    if num_seleccionado[0] == 0:
+        messagebox.showerror(parent=ventanaJuego,title="Error", message="FALTA QUE SELECCIONE UN DÍGITO")
+        return
+    else:
+        caller = event.widget
+        valor = caller.cget("text")
+        if es_plantilla:
+            messagebox.showerror(parent=ventanaJuego,title="Error", message="JUGADA NO ES VÁLIDA PORQUE ESTE ES UN DÍGITO FIJO")
+            return
+        else:
+            caller.configure(text = num_seleccionado[0])
 
 def cargar_tablero(ventanaJuego,partida,num_seleccionado):
     listaBotones = []
-    cont = 0
+    contFila = 0
+
+    posicion_signos = []
+    for elemento in partida:
+        if not(elemento[0].isnumeric()):
+            if elemento[0] == ">" or elemento[0] == "<" and elemento[2] not in posicion_signos:
+                posicion_signos.append(elemento[2])
+    posicion_signos.sort()
+
+    '''
+    signosColumna = []
+    for elemento in partida:
+        if not(elemento[0].isnumeric()):
+            if elemento[0] == "^" or elemento[0] == "˅" and elemento[1] not in signosColumna:
+                signosColumna.append(elemento[1])
+    signosColumna.sort()
+    '''
+        
     fila = 3
     col = 0
-    for i in range(5):
+    while contFila < 5:
         col = 0
-        for j in range(5):
-            cont += 1
-            btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
-            btn.grid(row=fila,column=col)
-            btn.bind("<1>",lambda event:seleccion_tablero(event,num_seleccionado))          
-            listaBotones += [ btn ] 
-            #if j == 2:
-            #    listaBotones += [ tk.Label(text=">")]
-            #listaBotones[-1].grid(row=fila,column=col)
+        contColumnas = 0
+        while contColumnas < 5:
+            bandera_encontrado = False
+            for indice,elemento in enumerate(partida):
+                if elemento[2] == col and elemento[1] + 3 == fila:                    
+                    if elemento[0].isnumeric():
+                        contColumnas += 1
+                        btn = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=5)
+                        btn.grid(row=fila,column=col,padx=3)
+                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla))
+                        listaBotones += [ btn ]
+                    else:
+                        btn2 = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=1,bd=0,state="disabled")
+                        listaBotones += [ btn2 ]
+                        listaBotones[-1].grid(row=fila,column=col,padx=1)
+                    bandera_encontrado = True
+                    break     
+            if bandera_encontrado == False:
+                if col in posicion_signos:
+                    col += 1
+                    continue
+                    
+                else:
+                    contColumnas += 1
+                    if contColumnas < 6:
+                        btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
+                        btn.grid(row=fila,column=col)
+                        btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla))
+                        listaBotones += [ btn ]
             col += 1
+        contFila += 1
         fila += 1
     
     
 
-def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado):
-    if not txtNombre.get().isalpha():
-        messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE VÁLIDO")
-        return
-    if partida == None:
-        messagebox.showerror(parent=ventanaJuego,title="Error", message="NO HAY PARTIDAS PARA ESTE NIVEL")
-        ventanaJuego.destroy()
-        return
+               
 
-    # se carga la partida
-    cargar_tablero(ventanaJuego,partida,num_seleccionado)
+    
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego):
+    while obj['state'] == "normal":
+        if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
+            messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
+            return
+        if not txtNombre.get().isalpha():
+            messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE VÁLIDO")
+            return
         
+        if partida == None:
+            messagebox.showerror(parent=ventanaJuego,title="Error", message="NO HAY PARTIDAS PARA ESTE NIVEL")
+            ventanaJuego.destroy()
+            return
 
-    # se deshabilita el boton
-    caller = event.widget
-    caller.configure(state = "disabled")
+        # se carga la partida
+        cargar_tablero(ventanaJuego,partida,num_seleccionado)
+            
+
+        # se deshabilita el boton
+        obj.configure(state= "disabled")
+        # se habilita el boton de terminar juego
+        btnTerminarJuego.configure(state= "normal")
     
         
 
@@ -324,20 +381,21 @@ def juego():
     lista_nivel = ["FÁCIL", "INTERMEDIO", "DIFÍCIL"]
     ventanaJuego = tk.Toplevel()
     ventanaJuego.title("FUTOSHIKI")
-    ventanaJuego.geometry("800x600")
+    ventanaJuego.geometry("1400x600")
     lblTitulo = tk.Label(ventanaJuego, text="FUTOSHIKI")
-    lblTitulo.grid(row=0,column=5)
+    lblTitulo.grid(row=0,column=10)
     lblNivel = tk.Label(ventanaJuego, text="NIVEL" + " " + lista_nivel[dic_configuracion["nivel"]])
-    lblNivel.grid(row=1,column=5)
+    lblNivel.grid(row=1,column=10)
 
     lblNombre = tk.Label(ventanaJuego, text="Nombre del jugador:")
-    lblNombre.grid(row=2,column=50)
+    lblNombre.grid(row=2,column=11)
     txtNombre = tk.StringVar()
     entryNombre = tk.Entry(ventanaJuego,textvariable=txtNombre)
-    entryNombre.grid(row=2,column=51)
+    entryNombre.grid(row=2,column=12)
 
     
     # CUADRICULA INICIAL
+    '''
     listaBotones = []
     cont = 0
     fila = 3
@@ -355,17 +413,18 @@ def juego():
             #listaBotones[-1].grid(row=fila,column=col)
             col += 1
         fila += 1
+    '''
         
     n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
-    n1.grid(row=3,column=7)
+    n1.grid(row=3,column=10,padx=50)
     n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
-    n2.grid(row=4,column=7)
+    n2.grid(row=4,column=10,padx=50)
     n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
-    n3.grid(row=5,column=7)
+    n3.grid(row=5,column=10,padx=50)
     n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
-    n4.grid(row=6,column=7)
+    n4.grid(row=6,column=10,padx=50)
     n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
-    n5.grid(row=7,column=7)
+    n5.grid(row=7,column=10,padx=50)
 
     n1.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,1,num_seleccionado,n1,n2,n3,n4,n5))
     n2.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,2,num_seleccionado,n1,n2,n3,n4,n5))
@@ -375,27 +434,29 @@ def juego():
     
     # Botones
     btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red")
-    btnIniciar.bind("<1>",lambda event:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado))
-    btnIniciar.grid(row=8,column=0)
+    btnIniciar.grid(row=8,column=11)
 
     btnBorrarJugada = tk.Button(ventanaJuego, text="BORRAR JUGADA", bg="cyan")
-    btnBorrarJugada.grid(row=8,column=1)
+    btnBorrarJugada.grid(row=8,column=12)
 
-    btnTerminarJuego = tk.Button(ventanaJuego, text="TERMINAR JUEGO", bg="green")
-    btnTerminarJuego.grid(row=8,column=2)
+    btnTerminarJuego = tk.Button(ventanaJuego, text="TERMINAR JUEGO", bg="green", state="disabled")
+    btnTerminarJuego.grid(row=8,column=13)
 
     btnBorrarJuego = tk.Button(ventanaJuego, text="BORRAR JUEGO", bg="violet")
-    btnBorrarJuego.grid(row=8,column=3)
+    btnBorrarJuego.grid(row=8,column=14)
 
     btnTop10 = tk.Button(ventanaJuego, text="TOP 10", bg="yellow")
-    btnTop10.grid(row=8,column=4)
+    btnTop10.grid(row=8,column=15)
+
+    # Eventos
+    btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego))
 
     # Guardar / Cargar
     btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO")
-    btnGuardar.grid(row=9,column=1)
+    btnGuardar.grid(row=9,column=16)
 
     btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO")
-    btnCargar.grid(row=9,column=2)
+    btnCargar.grid(row=9,column=17)
 
     
     
