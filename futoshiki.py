@@ -65,7 +65,6 @@ def guardaDatosConfiguracion(CheckNivel, CheckHoras, CheckPosicion,txtHora,txtMi
 
     #se refresca el diccionario de la configuracion
     dic_configuracion = actualizar_dic_configuracion()
-    print("despues",dic_configuracion)
 
 def guardaPartidasArchivo():
     partidasFacil = list()
@@ -103,7 +102,6 @@ def cargarDatosConfiguracion():
     return None
 
 def actualizar_dic_configuracion():
-    #print("metodo actualiza",dic_configuracion)
     temp = dic_configuracion
     resultado = cargarDatosConfiguracion()
     if resultado != None:
@@ -270,7 +268,6 @@ def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3
 
     if nueva_seleccion != num_seleccionado[0]:
         num_seleccionado[0] = nueva_seleccion
-        
         caller.configure(background = "green")
     else:
         caller = event.widget
@@ -377,18 +374,34 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         # se habilita el boton de borrar juego
         btnBorrarJuego.configure(state= "normal")
     
-def terminar_juego(event,ventanaJuego,btnTerminarJuego,dic_configuracion):
-    respuesta = messagebox.askyesno(parent=ventanaJuego,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
+def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5):
+    respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
     if respuesta:
+        # Se limpian la seleccion de los botones:
+        n1.configure(background = "SystemButtonFace")
+        n2.configure(background = "SystemButtonFace")
+        n3.configure(background = "SystemButtonFace")
+        n4.configure(background = "SystemButtonFace")
+        n5.configure(background = "SystemButtonFace")
+        
         partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
-        cargar_tablero(ventanaJuego,partida,0)
-        messagebox.showinfo(parent=ventanaJuego,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
+        num_selec[0] = 0
+        cargar_tablero(ventana,partida[0],num_selec)
+        messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
              
-def borrar_juego(event,ventana,obj,dic_config,num_partida):
+def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5):
     respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
     if respuesta:
+        # Se limpian la seleccion de los botones:
+        n1.configure(background = "SystemButtonFace")
+        n2.configure(background = "SystemButtonFace")
+        n3.configure(background = "SystemButtonFace")
+        n4.configure(background = "SystemButtonFace")
+        n5.configure(background = "SystemButtonFace")
+        
         partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
-        cargar_tablero(ventana,partida,0)
+        num_seleccionado[0] = 0
+        cargar_tablero(ventana,partida,num_seleccionado)
         messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
     
@@ -477,9 +490,10 @@ def juego():
 
     # Eventos
     btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego))
-    btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion:terminar_juego(event,ventana,obj,dic_config))
-    btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida:borrar_juego(event,ventana,obj,dic_config, \
-                                                                                                                                                   idpartida))  
+    btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion,num_selec=num_seleccionado: \
+                                                        terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5))
+    btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida,num_selec=num_seleccionado: \
+                                                        borrar_juego(event,ventana,obj,dic_config,idpartida,num_selec,n1,n2,n3,n4,n5))  
     
     # Guardar / Cargar
     btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO")
