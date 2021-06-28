@@ -224,7 +224,7 @@ def leer_partidas():
     
 
 # lee el archivo de partidas
-def obtener_partida(nivel):
+def obtener_partida_aleatoria(nivel):
     partidas = leer_partidas()
     if nivel == 0:
         cantidadPartidas = len(partidas[0])
@@ -232,21 +232,30 @@ def obtener_partida(nivel):
             return None
         else:
             aleatorio = random.randint(0,cantidadPartidas - 1)
-            return partidas[0][aleatorio]
+            return partidas[0][aleatorio],aleatorio
     elif nivel == 1:
         cantidadPartidas = len(partidas[1])
         if cantidadPartidas == 0:
             return None
         else:
             aleatorio = random.randint(0,cantidadPartidas - 1)
-            return partidas[1][aleatorio]
+            return partidas[1][aleatorio],aleatorio
     else:
         cantidadPartidas = len(partidas[2])
         if cantidadPartidas == 0:
             return None
         else:
             aleatorio = random.randint(0,cantidadPartidas - 1)
-            return partidas[2][aleatorio]
+            return partidas[2][aleatorio],aleatorio
+
+def obtener_partida_x_nivel_id(nivel,idpartida):
+    partidas = leer_partidas()
+    if nivel == 0:
+        return partidas[0][idpartida]
+    elif nivel == 1:
+        return partidas[1][idpartida]
+    else:
+        return partidas[2][idpartida]
         
     
 
@@ -343,7 +352,7 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado):
                
 
     
-def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego):
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego):
     while obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
@@ -365,8 +374,24 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         obj.configure(state= "disabled")
         # se habilita el boton de terminar juego
         btnTerminarJuego.configure(state= "normal")
+        # se habilita el boton de borrar juego
+        btnBorrarJuego.configure(state= "normal")
     
-        
+def terminar_juego(event,ventanaJuego,btnTerminarJuego,dic_configuracion):
+    respuesta = messagebox.askyesno(parent=ventanaJuego,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
+    if respuesta:
+        partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
+        cargar_tablero(ventanaJuego,partida,0)
+        messagebox.showinfo(parent=ventanaJuego,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
+             
+def borrar_juego(event,ventana,obj,dic_config,num_partida):
+    respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
+    if respuesta:
+        partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
+        cargar_tablero(ventana,partida,0)
+        messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
+
+    
 
 
 #VENTANA JUEGO:
@@ -375,7 +400,9 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
 #Salidas: ninguna
 def juego():
     dic_configuracion = actualizar_dic_configuracion()
-    partida = obtener_partida(dic_configuracion["nivel"]) # se obtiene la partida segun el nivel configurado por el usuario
+    resultado = obtener_partida_aleatoria(dic_configuracion["nivel"]) # se obtiene la partida segun el nivel configurado por el usuario
+    partida = resultado[0]
+    num_partida = resultado[1]
     num_seleccionado = [0]
     
     lista_nivel = ["FÁCIL", "INTERMEDIO", "DIFÍCIL"]
@@ -442,15 +469,18 @@ def juego():
     btnTerminarJuego = tk.Button(ventanaJuego, text="TERMINAR JUEGO", bg="green", state="disabled")
     btnTerminarJuego.grid(row=8,column=13)
 
-    btnBorrarJuego = tk.Button(ventanaJuego, text="BORRAR JUEGO", bg="violet")
+    btnBorrarJuego = tk.Button(ventanaJuego, text="BORRAR JUEGO", bg="violet",state="disabled")
     btnBorrarJuego.grid(row=8,column=14)
 
     btnTop10 = tk.Button(ventanaJuego, text="TOP 10", bg="yellow")
     btnTop10.grid(row=8,column=15)
 
     # Eventos
-    btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego))
-
+    btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego))
+    btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion:terminar_juego(event,ventana,obj,dic_config))
+    btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida:borrar_juego(event,ventana,obj,dic_config, \
+                                                                                                                                                   idpartida))  
+    
     # Guardar / Cargar
     btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO")
     btnGuardar.grid(row=9,column=16)
