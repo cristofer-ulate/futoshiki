@@ -386,8 +386,6 @@ def borrar_jugada(event,ventanaJuego,pila_jugadas,tablero_usuario):
             boton.configure(text = "")
 
             # elimino el numero del tablero del usuario y relleno el valor con default de 0:
-            print("posiciones",posiciones)
-            print(tablero_usuario)
             tablero_usuario[posiciones[0]-3][posiciones[1]] = 0
             
         
@@ -572,7 +570,7 @@ def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
 
-def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):
+def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario,num_partida):
     boton = event.widget
     estado_boton = boton.cget("state")
     if estado_boton != "disabled":
@@ -581,6 +579,7 @@ def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):
         pickle.dump(dic_configuracion,f) #configuracion de la partida
         pickle.dump(txtNombre.get(),f)   #nombre
         pickle.dump(tablero_usuario,f)   #tablero del usuario
+        pickle.dump(num_partida,f)       #numero de partida
         f.close()
         messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
 
@@ -589,50 +588,82 @@ def leer_archivo_juego():
     dic_temp = {}
     nombre = ""
     tablero = []
+    num_partida = -1
     f=open("futoshiki2021juegoactual.dat","rb")
     while True:
         try:
             dic_temp=pickle.load(f)
             nombre=pickle.load(f)
             tablero=pickle.load(f)
+            num_partida=pickle.load(f)
         except EOFError:
             break
     f.close()
-    return dic_temp,nombre,tablero
+    return dic_temp,nombre,tablero,num_partida
     
     
 
-def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida):    
+def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida,btnIniciar,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar):    
     resultado = leer_archivo_juego()
+    dic_configuracion = resultado[0]
     txtNombre.set(resultado[1])
-    tablero = resultado[2]
-
-    for indice_fila,fila in enumerate(tablero):
+    tablero_usuario = resultado[2]
+    num_partida = resultado[3]
+    partida = obtener_partida_x_nivel_id(dic_configuracion["nivel"],num_partida)
+    print(tablero_usuario)
+    for indice_fila,fila in enumerate(tablero_usuario):
         for indice_columna,columna in enumerate(fila):
-            bandera_encontrado = False
-            for indice,elemento in enumerate(partida):
-                if elemento[2] == columna and elemento[1] == fila:                    
-                    if elemento[0].isnumeric():
-                        btn = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=5)
-                        btn.grid(row=indice_fila+3,column=indice_columna,padx=3)
-                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas,dic_config))
-                        bandera_encontrado == True
-                        break
-                     
-            if bandera_encontrado == False:
+            if type(columna) == int:
                 if columna == -1:
-                    print("aqui")
                     continue
-                    
-                elif columna == 0: 
+                elif columna == 0:
                     btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
                     btn.grid(row=indice_fila+3,column=indice_columna)
-                    btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas,dic_config))
+                    btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,indice_fila+3,indice_columna,tablero_usuario,pila_jugadas,dic_configuracion))
                 else:
-                    btn2 = tk.Button(ventanaJuego,text=columna,compound="c",height=2,width=1,bd=0,state="disabled")
+                    indice_encontrado = -1 
+                    for indice,elemento in enumerate(partida):
+                        if elemento[1] == indice_fila and elemento[2] == indice_columna:
+                            indice_encontrado = elemento[2]
+                            break
+                    if indice_encontrado != -1: # es plantilla
+                        btn = tk.Button(ventanaJuego,text=columna,compound="c",height=2,width=5)
+                        btn.grid(row=indice_fila+3,column=indice_columna,padx=3)
+                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,indice_fila+3,indice_columna,tablero_usuario,pila_jugadas,dic_configuracion))
+                    else:   # no es plantilla, fue un numero digitado por el usuario
+                        btn = tk.Button(ventanaJuego,text=columna,compound="c",height=2,width=5)
+                        btn.grid(row=indice_fila+3,column=indice_columna,padx=3)
+                        btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,indice_fila+3,indice_columna,tablero_usuario,pila_jugadas,dic_configuracion))                                
+                
+            else:
+                btn2 = tk.Button(ventanaJuego,text=columna,compound="c",height=2,width=1,bd=0,state="disabled")
+                btn2.grid(row=indice_fila+3,column=indice_columna,padx=3)
 
+    # Se generan los botones de seleccion de numeros:
+    n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
+    n1.grid(row=3,column=13,padx=50)
+    n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
+    n2.grid(row=4,column=13,padx=50)
+    n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
+    n3.grid(row=5,column=13,padx=50)
+    n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
+    n4.grid(row=6,column=13,padx=50)
+    n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
+    n5.grid(row=7,column=13,padx=50)
 
-    messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO CARGADO EXITOSAMENTE")
+    n1.bind("<1>",lambda event:agregar_digito(event,ventana,1,num_seleccionado,n1,n2,n3,n4,n5))
+    n2.bind("<1>",lambda event:agregar_digito(event,ventana,2,num_seleccionado,n1,n2,n3,n4,n5))
+    n3.bind("<1>",lambda event:agregar_digito(event,ventana,3,num_seleccionado,n1,n2,n3,n4,n5))
+    n4.bind("<1>",lambda event:agregar_digito(event,ventana,4,num_seleccionado,n1,n2,n3,n4,n5))
+    n5.bind("<1>",lambda event:agregar_digito(event,ventana,5,num_seleccionado,n1,n2,n3,n4,n5))
+
+    btnIniciar.configure(state = "disabled")
+    btnGuardar.configure(state = "normal")
+    btnTerminarJuego.configure(state = "normal")
+    btnBorrarJuego.configure(state = "normal")
+    btnBorrarJugada.configure(state = "normal")
+                
+    messagebox.showinfo(parent=ventanaJuego,title="Confirmación", message="JUEGO CARGADO EXITOSAMENTE")
 
 
     
@@ -646,7 +677,6 @@ def juego():
     dic_configuracion = actualizar_dic_configuracion()
     resultado = obtener_partida_aleatoria(dic_configuracion["nivel"]) # se obtiene la partida segun el nivel configurado por el usuario
     partida = resultado[0]
-    print("partida",partida)
     num_partida = resultado[1]
     num_seleccionado = [0]
     tablero_usuario = []
@@ -707,12 +737,13 @@ def juego():
     
     # Guardar / Cargar
     btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO",height=2, width=17,state="disabled")
-    btnGuardar.bind("<1>",lambda event:guardar_juego(event,ventanaJuego,dic_configuracion,txtNombre,tablero_usuario))
+    btnGuardar.bind("<1>",lambda event:guardar_juego(event,ventanaJuego,dic_configuracion,txtNombre,tablero_usuario,num_partida))
     btnGuardar.grid(row=8,column=16)
 
     btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO",height=2, width=17)
     btnCargar.grid(row=8,column=17)
-    btnCargar.bind("<1>",lambda event:cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida))
+    btnCargar.bind("<1>",lambda event:cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida, \
+                                                   btnIniciar,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar))
 
     
     
