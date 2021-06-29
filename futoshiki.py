@@ -1,3 +1,10 @@
+# PROGRAMA #3 - FUTOSHIKI
+# Estudiante: Cristofer Ulate Bolaños
+# Cedula 2 0776 0860
+# Carne 2021559018
+# Grupo 3
+
+
 #Importacion de modulos:
 
 import tkinter as tk
@@ -66,6 +73,10 @@ def guardaDatosConfiguracion(CheckNivel, CheckHoras, CheckPosicion,txtHora,txtMi
     #se refresca el diccionario de la configuracion
     dic_configuracion = actualizar_dic_configuracion()
 
+
+#Funcion para guardar las partidas predefinidas del juego
+#Entradas: Ninguna, las listas contienen datos predefinidos
+#Salidas: None, laslistas se guardan en el archivo
 def guardaPartidasArchivo():
     partidasFacil = list()
     partidasFacil = [((">", 0, 1), (">", 0, 5), (">", 0, 7),("4", 1, 0), ("2", 1, 8), ("4", 2, 4), ("<", 3, 7), ("4", 3, 8), ("<", 4, 1), ("<", 4, 3))]
@@ -101,6 +112,10 @@ def cargarDatosConfiguracion():
         return dic_temp
     return None
 
+
+#Funcion para actualizar el diccionario con la configuracion del sistema
+#Entradas: Ninguna
+#Salidas: El diccionario con los valores actualizados
 def actualizar_dic_configuracion():
     temp = dic_configuracion
     resultado = cargarDatosConfiguracion()
@@ -108,6 +123,10 @@ def actualizar_dic_configuracion():
         return resultado
     return temp
 
+
+#Funcion para validar los habilitar los radio button del timer segub la opcion seleccionada
+#Entradas: valores de los campos de la interfaz grafica
+#Salidas: Ninguna
 def valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtMinutos,entryMinutos,txtSegundos,entrySegundos):
     boton = event.widget
     texto_boton = boton.cget("text")
@@ -119,8 +138,7 @@ def valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtM
         entryHora.config(state='normal')
         entryMinutos.config(state='normal')
         entrySegundos.config(state='normal')
-    
-    
+
 
 #VENTANA CONFIGURACION:
 #Funcion que carga la ventana de configuracion asi como todos los componentes
@@ -163,16 +181,14 @@ def configuracion():
 
     rbHorasTimer = tk.Radiobutton(ventanaConfig, text = "Timer", variable = CheckHoras, value=2,tristatevalue=2)
     rbHorasTimer.grid(row=2,column=3)
-    '''
+    
     CheckHoras.set(dic_configuracion["reloj"])
 
     habilitado = 'disabled'
     if dic_configuracion["reloj"] != "":
         if dic_configuracion["reloj"] == 2:
             habilitado = 'normal'
-    '''
-    habilitado = 'normal'
-
+    
     lblHora = tk.Label(ventanaConfig,text="Horas:",pady=10)
     lblHora.grid(row=3,column=3)
     txtHora = tk.StringVar(value=dic_configuracion["hora"])
@@ -219,6 +235,10 @@ def configuracion():
 
     ventanaConfig.mainloop()
 
+
+#Funcion para leer el archivo de partidas
+#Entradas: Ninguna
+#Salidas: Las listas con las partidas faciles, intermedias y dificiles
 def leer_partidas():
     partidasFacil = list()
     partidasIntermedio = list()
@@ -236,8 +256,9 @@ def leer_partidas():
     return partidasFacil,partidasIntermedio,partidasDificil
 
     
-
-# lee el archivo de partidas
+#Funcion para obtener una partida aleatoria
+#Entradas: El nivel de dificultad
+#Salidas: La lista con los datos de la partida y el numero de partida
 def obtener_partida_aleatoria(nivel):
     partidas = leer_partidas()
     if nivel == 0:
@@ -262,6 +283,10 @@ def obtener_partida_aleatoria(nivel):
             aleatorio = random.randint(0,cantidadPartidas - 1)
             return partidas[2][aleatorio],aleatorio
 
+
+#Funcion para obtener una partida por su id
+#Entradas: el nivel y el id de la partida
+#Salidas: La lista con la partida
 def obtener_partida_x_nivel_id(nivel,idpartida):
     partidas = leer_partidas()
     if nivel == 0:
@@ -270,9 +295,11 @@ def obtener_partida_x_nivel_id(nivel,idpartida):
         return partidas[1][idpartida]
     else:
         return partidas[2][idpartida]
-        
-    
 
+        
+#Funcion para validar el uso de los botones del panel de digitos
+#Entradas: campos de entrada de la ventana 
+#Salidas: None, simplemente se actualizan los controles
 def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3,n4,n5):
     n1.configure(background = "SystemButtonFace")
     n2.configure(background = "SystemButtonFace")
@@ -290,6 +317,10 @@ def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3
         caller.configure(background = "SystemButtonFace")
         num_seleccionado[0] = 0
 
+
+#Funcion para validar que el numero insertado este correcto tanto en fila como en columna
+#Entradas: numero de fila y columna
+#Salidas: Valor booleano que inidica si esta correcto ademas del mensaje de error
 def validar_numero_tablero(num,i_fila,i_col,tablero_usuario):
     total_filas = len(tablero_usuario)
     total_columnas = len(tablero_usuario[0])
@@ -326,6 +357,9 @@ def validar_numero_tablero(num,i_fila,i_col,tablero_usuario):
     return True,True
 
 
+#Funcion para validar si el usuario ha gando el juego
+#Entradas: el tablero con los numeros agregados
+#Salidas: Valor booleano que indica si se ha ganado el juego
 def verifica_juego_ganado(tablero_usuario):
     for fila in tablero_usuario:
         if 0 in fila:
@@ -333,6 +367,9 @@ def verifica_juego_ganado(tablero_usuario):
     return True
     
 
+#Funcion para validar cada click que se haga en el tablero para agregar un numero
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna
 def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,i_fila,i_col,tablero_usuario,pila_jugadas,dic_config):
     boton = event.widget
     if num_seleccionado[0] == 0:
@@ -371,7 +408,10 @@ def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,i_fila,i_
                     generar_nuevo_juego(event,ventanaJuego,dic_config,num_seleccionado,pila_jugadas,tablero_usuario)
                     
                 
-                
+
+#Funcion para controlar el evento de borrar una jugada
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna                
 def borrar_jugada(event,ventanaJuego,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
@@ -389,10 +429,9 @@ def borrar_jugada(event,ventanaJuego,pila_jugadas,tablero_usuario):
             tablero_usuario[posiciones[0]-3][posiciones[1]] = 0
             
         
-        
-    
-            
-
+#Funcion para cargar el tablero para el inicio del juego
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna
 def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas,tablero_usuario,dic_config):
     listaBotones = []
     tablero_usuario.clear()
@@ -459,7 +498,9 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas,tablero_us
         fila += 1
     
 
-    
+#Funcion para controlar el evento del clic en el boton de iniciar juego
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna   
 def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario,dic_config):
     if obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
@@ -507,6 +548,9 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         btnGuardar.configure(state= "normal")
         
 
+#Funcion para generar nuevos botones para un nuevo juego
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna
 def generar_nuevo_juego(event,ventana,dic_config,num_selec,pila_jugadas,tablero_usuario):
     # Se generan nuevos botones para limpiar la seleccion de los botones:
             n1 = tk.Button(ventana,text="1",compound="c",height=2,width=5)
@@ -530,7 +574,10 @@ def generar_nuevo_juego(event,ventana,dic_config,num_selec,pila_jugadas,tablero_
             num_selec[0] = 0
             cargar_tablero(ventana,partida[0],num_selec,pila_jugadas,tablero_usuario,dic_config)
     
-    
+
+#Funcion para validar el evento del boton de terminar juego
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna    
 def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
@@ -539,7 +586,11 @@ def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_ju
         if respuesta:
             generar_nuevo_juego(event,ventana,dic_config,num_selec,pila_jugadas,tablero_usuario)
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
-             
+
+
+#Funcion para validar el evento del boton de borrar juego
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna             
 def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
@@ -570,6 +621,9 @@ def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
 
+#Funcion para guardar el juego en el archivo 
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna 
 def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario,num_partida):
     boton = event.widget
     estado_boton = boton.cget("state")
@@ -584,6 +638,9 @@ def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario,num_
         messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
 
 
+#Funcion para realizar la lectura de los datos del archivo
+#Entradas: Ninguna 
+#Salidas: Ninguna 
 def leer_archivo_juego():
     dic_temp = {}
     nombre = ""
@@ -602,7 +659,9 @@ def leer_archivo_juego():
     return dic_temp,nombre,tablero,num_partida
     
     
-
+#Funcion para cargar un juego del archivo
+#Entradas: elementos varios del evento 
+#Salidas: Ninguna 
 def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida,btnIniciar,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar):    
     resultado = leer_archivo_juego()
     dic_configuracion = resultado[0]
@@ -610,7 +669,6 @@ def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_juga
     tablero_usuario = resultado[2]
     num_partida = resultado[3]
     partida = obtener_partida_x_nivel_id(dic_configuracion["nivel"],num_partida)
-    print(tablero_usuario)
     for indice_fila,fila in enumerate(tablero_usuario):
         for indice_columna,columna in enumerate(fila):
             if type(columna) == int:
@@ -664,9 +722,6 @@ def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_juga
     btnBorrarJugada.configure(state = "normal")
                 
     messagebox.showinfo(parent=ventanaJuego,title="Confirmación", message="JUEGO CARGADO EXITOSAMENTE")
-
-
-    
 
 
 #VENTANA JUEGO:
@@ -746,12 +801,6 @@ def juego():
                                                    btnIniciar,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar))
 
     
-    
-    
-
-
-
-
 #Funcion que carga la ventana de acerca de del programa
 #Entradas: ninguna
 #Salidas: ninguna
@@ -768,6 +817,7 @@ def acerca_de():
     lblAutor = tk.Label(ventanaAcercaDe, text="Autor: Cristofer Ulate Bolaños")
     lblAutor.pack(pady=13,padx=8)
 
+
 #Funcion que carga la ventana de ayuda de del programa donde se imprime el manual de usuario
 #Entradas: ninguna
 #Salidas: ninguna
@@ -776,8 +826,7 @@ def ayuda():
     path = 'manual_de_usuario_ futoshiki.pdf'
     webbrowser.open_new(path)
 
-        
-    
+          
 #VENTANA PRINCIPAL:
 
 #lectura de archivos
@@ -804,20 +853,4 @@ lblFoto = tk.Label(ventana, image=foto)
 lblFoto.pack()
 
 ventana.mainloop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
