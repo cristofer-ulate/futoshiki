@@ -108,8 +108,17 @@ def actualizar_dic_configuracion():
         return resultado
     return temp
 
-def valida_controles_timer():
-    return None
+def valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtMinutos,entryMinutos,txtSegundos,entrySegundos):
+    boton = event.widget
+    texto_boton = boton.cget("text")
+    if texto_boton != "Timer":
+        entryHora.config(state='disabled')
+        entryMinutos.config(state='disabled')
+        entrySegundos.config(state='disabled')
+    else:
+        entryHora.config(state='normal')
+        entryMinutos.config(state='normal')
+        entrySegundos.config(state='normal')
     
     
 
@@ -121,7 +130,7 @@ def configuracion():
     dic_configuracion = actualizar_dic_configuracion()
     ventanaConfig = tk.Toplevel()
     ventanaConfig.title("FUTOSHIKI - CONFIGURACIÓN")
-    ventanaConfig.geometry("800x600")
+    ventanaConfig.geometry("1100x600")
     lblTitulo = tk.Label(ventanaConfig, text="FUTOSHIKI - CONFIGURACIÓN")
     lblTitulo.grid(row=0,column=1,pady=10,padx=1)
 
@@ -146,21 +155,23 @@ def configuracion():
 
     CheckHoras = tk.IntVar()
     
-    rbHoraSi = tk.Radiobutton(ventanaConfig, text="Sí", variable = CheckHoras, value=0)
+    rbHoraSi = tk.Radiobutton(ventanaConfig, text="Sí", variable = CheckHoras, value=0,tristatevalue=0)
     rbHoraSi.grid(row=2,column=1)
 
-    rbHorasNo = tk.Radiobutton(ventanaConfig, text = "No", variable = CheckHoras, value=1)
+    rbHorasNo = tk.Radiobutton(ventanaConfig, text = "No", variable = CheckHoras, value=1,tristatevalue=1)
     rbHorasNo.grid(row=2,column=2)
 
-    rbHorasTimer = tk.Radiobutton(ventanaConfig, text = "Timer", variable = CheckHoras, value=2)
+    rbHorasTimer = tk.Radiobutton(ventanaConfig, text = "Timer", variable = CheckHoras, value=2,tristatevalue=2)
     rbHorasTimer.grid(row=2,column=3)
-
+    '''
     CheckHoras.set(dic_configuracion["reloj"])
 
     habilitado = 'disabled'
     if dic_configuracion["reloj"] != "":
         if dic_configuracion["reloj"] == 2:
-            habilitado = 'normal'            
+            habilitado = 'normal'
+    '''
+    habilitado = 'normal'
 
     lblHora = tk.Label(ventanaConfig,text="Horas:",pady=10)
     lblHora.grid(row=3,column=3)
@@ -193,13 +204,18 @@ def configuracion():
 
     CheckPosicion.set(dic_configuracion["posicion"])
 
+    #Eventos RadioButton:
+    rbHoraSi.bind("<1>",lambda event:valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtMinutos,entryMinutos,txtSegundos,entrySegundos))
+    rbHorasNo.bind("<1>",lambda event:valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtMinutos,entryMinutos,txtSegundos,entrySegundos))
+    rbHorasTimer.bind("<1>",lambda event:valida_controles_timer(event,ventanaConfig,CheckHoras,txtHora,entryHora,txtMinutos,entryMinutos,txtSegundos,entrySegundos))
+
 
     btnOk = tk.Button(ventanaConfig, text="   Ok   ", command=lambda:validaEntradasVentanaConfiguracion(ventanaConfig,CheckNivel,CheckHoras,CheckPosicion, \
-                                                                                                        txtHora,txtMinutos,txtSegundos))
-    btnOk.grid(row=8,column=0)
+                                                                                                        txtHora,txtMinutos,txtSegundos),height=2,width=5)
+    btnOk.grid(row=8,column=0,pady=(30,0))
 
-    btnCancelar = tk.Button(ventanaConfig, text="   Cancelar   ", command=ventanaConfig.destroy)
-    btnCancelar.grid(row=8,column=1)
+    btnCancelar = tk.Button(ventanaConfig, text="   Cancelar   ", command=ventanaConfig.destroy,height=2,width=7)
+    btnCancelar.grid(row=8,column=1,pady=(30,0))
 
     ventanaConfig.mainloop()
 
@@ -569,14 +585,54 @@ def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):
         messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
 
 
-def cargar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):    
-    #se guardan los datos de la partida en el archivo futoshiki2021juegoactual.dat
-    f=open("futoshiki2021juegoactual.dat","wb")
-    pickle.dump(dic_configuracion,f) #configuracion de la partida
-    pickle.dump(txtNombre.get(),f)   #nombre
-    pickle.dump(tablero_usuario,f)   #tablero del usuario
+def leer_archivo_juego():
+    dic_temp = {}
+    nombre = ""
+    tablero = []
+    f=open("futoshiki2021juegoactual.dat","rb")
+    while True:
+        try:
+            dic_temp=pickle.load(f)
+            nombre=pickle.load(f)
+            tablero=pickle.load(f)
+        except EOFError:
+            break
     f.close()
-    messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
+    return dic_temp,nombre,tablero
+    
+    
+
+def cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida):    
+    resultado = leer_archivo_juego()
+    txtNombre.set(resultado[1])
+    tablero = resultado[2]
+
+    for indice_fila,fila in enumerate(tablero):
+        for indice_columna,columna in enumerate(fila):
+            bandera_encontrado = False
+            for indice,elemento in enumerate(partida):
+                if elemento[2] == columna and elemento[1] == fila:                    
+                    if elemento[0].isnumeric():
+                        btn = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=5)
+                        btn.grid(row=indice_fila+3,column=indice_columna,padx=3)
+                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas,dic_config))
+                        bandera_encontrado == True
+                        break
+                     
+            if bandera_encontrado == False:
+                if columna == -1:
+                    print("aqui")
+                    continue
+                    
+                elif columna == 0: 
+                    btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
+                    btn.grid(row=indice_fila+3,column=indice_columna)
+                    btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas,dic_config))
+                else:
+                    btn2 = tk.Button(ventanaJuego,text=columna,compound="c",height=2,width=1,bd=0,state="disabled")
+
+
+    messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO CARGADO EXITOSAMENTE")
 
 
     
@@ -590,6 +646,7 @@ def juego():
     dic_configuracion = actualizar_dic_configuracion()
     resultado = obtener_partida_aleatoria(dic_configuracion["nivel"]) # se obtiene la partida segun el nivel configurado por el usuario
     partida = resultado[0]
+    print("partida",partida)
     num_partida = resultado[1]
     num_seleccionado = [0]
     tablero_usuario = []
@@ -655,7 +712,7 @@ def juego():
 
     btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO",height=2, width=17)
     btnCargar.grid(row=8,column=17)
-    btnCargar.bind("<1>",lambda event:cargar_juego(event,ventanaJuego,dic_configuracion,txtNombre,tablero_usuario))
+    btnCargar.bind("<1>",lambda event:cargar_juego(event,ventanaJuego,num_seleccionado,dic_configuracion,pila_jugadas,txtNombre,tablero_usuario,partida))
 
     
     
