@@ -274,22 +274,86 @@ def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3
         caller.configure(background = "SystemButtonFace")
         num_seleccionado[0] = 0
 
-def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla):
+def validar_numero_tablero(num,i_fila,i_col,tablero_usuario):
+    print("tablero",tablero_usuario)
+    print("num",num,"i_fila",i_fila,"i_col",i_col)
+    total_filas = len(tablero_usuario)
+    total_columnas = len(tablero_usuario[0])
+    
+    if num in tablero_usuario[i_fila]:
+        return False,"JUGADA NO ES VÁLIDA PORQUE EL ELEMENTO YA ESTÁ EN LA FILA"
+
+    for indice_f,fila in enumerate(tablero_usuario):
+        if fila[i_col] == num:
+            return False,"JUGADA NO ES VÁLIDA PORQUE EL ELEMENTO YA ESTÁ EN LA COLUMNA"
+    if i_col - 1 > 0:
+        anterior = i_col - 1
+        trasanterior = i_col - 2
+        if tablero_usuario[i_fila][trasanterior] != 0:
+            if tablero_usuario[i_fila][anterior] == ">":
+                if tablero_usuario[i_fila][trasanterior] < num:
+                    return False,"JUGADA NO ES VÁLIDA PORQUE NO CUMPLE CON LA RESTRICCIÓN DE MAYOR"
+                    
+            elif tablero_usuario[i_fila][anterior] == "<":
+                if tablero_usuario[i_fila][trasanterior] > num:
+                    return False,"JUGADA NO ES VÁLIDA PORQUE NO CUMPLE CON LA RESTRICCIÓN DE MENOR"
+    if i_col + 1 < total_columnas:
+        siguiente = i_col + 1
+        subsiguiente = i_col + 2
+        if tablero_usuario[i_fila][subsiguiente] != 0:
+            if tablero_usuario[i_fila][siguiente] == ">":
+                if tablero_usuario[i_fila][subsiguiente] < num:
+                    return False,"JUGADA NO ES VÁLIDA PORQUE NO CUMPLE CON LA RESTRICCIÓN DE MAYOR"
+                    
+            elif tablero_usuario[i_fila][siguiente] == "<":
+                if tablero_usuario[i_fila][subsiguiente] > num:
+                    return False,"JUGADA NO ES VÁLIDA PORQUE NO CUMPLE CON LA RESTRICCIÓN DE MENOR"
+        
+    return True,True
+    
+
+def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,i_fila,i_col,tablero_usuario,pila_jugadas):
+    boton = event.widget
     if num_seleccionado[0] == 0:
         messagebox.showerror(parent=ventanaJuego,title="Error", message="FALTA QUE SELECCIONE UN DÍGITO")
         return
     else:
-        caller = event.widget
-        valor = caller.cget("text")
+        valor = boton.cget("text")
         if es_plantilla:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="JUGADA NO ES VÁLIDA PORQUE ESTE ES UN DÍGITO FIJO")
             return
         else:
-            caller.configure(text = num_seleccionado[0])
+            info_posicion = boton.grid_info()
+            resultado_validacion = validar_numero_tablero(num_seleccionado[0],info_posicion["row"]-3,info_posicion["column"],tablero_usuario)
+            if resultado_validacion[0] == False:
+                #boton.configure(bg = "red")
+                messagebox.showerror(parent=ventanaJuego,title="Error", message=resultado_validacion[1])
+                return
+            else:
+                boton.configure(text = num_seleccionado[0])
 
-def cargar_tablero(ventanaJuego,partida,num_seleccionado):
+                # se agrega el numero a la pila de jugadas
+                jugada = (info_posicion["row"],info_posicion["column"])
+                pila_jugadas.append(jugada) # se hace el push a la pila
+                
+def borrar_jugada(event,ventanaJuego,pila_jugadas):
+    if len(pila_jugadas) == 0:
+        messagebox.showinfo(parent=ventanaJuego,title="Error", message="NO HAY MÁS JUGADAS PARA BORRAR")
+        return
+    else:
+        posiciones = pila_jugadas.pop()
+        boton = ventanaJuego.grid_slaves(row=posiciones[0], column=posiciones[1])[0]
+        boton.configure(text = "")
+        
+        
+    
+            
+
+def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas):
     listaBotones = []
+    tablero_usuario = []
     contFila = 0
+    pila_jugadas.clear() # Se limpia la pila de jugadas
 
     posicion_signos = []
     for elemento in partida:
@@ -312,6 +376,7 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado):
     while contFila < 5:
         col = 0
         contColumnas = 0
+        temp_fila_usuario = []
         while contColumnas < 5:
             bandera_encontrado = False
             for indice,elemento in enumerate(partida):
@@ -320,16 +385,19 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado):
                         contColumnas += 1
                         btn = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=5)
                         btn.grid(row=fila,column=col,padx=3)
-                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla))
+                        btn.bind("<1>",lambda event,es_plantilla=True:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas))
                         listaBotones += [ btn ]
+                        temp_fila_usuario.append(int(elemento[0]))
                     else:
                         btn2 = tk.Button(ventanaJuego,text=elemento[0],compound="c",height=2,width=1,bd=0,state="disabled")
                         listaBotones += [ btn2 ]
                         listaBotones[-1].grid(row=fila,column=col,padx=1)
+                        temp_fila_usuario.append(elemento[0])
                     bandera_encontrado = True
                     break     
             if bandera_encontrado == False:
                 if col in posicion_signos:
+                    temp_fila_usuario.append(0)
                     col += 1
                     continue
                     
@@ -338,18 +406,17 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado):
                     if contColumnas < 6:
                         btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5)
                         btn.grid(row=fila,column=col)
-                        btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla))
+                        btn.bind("<1>",lambda event,es_plantilla=False:seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,fila,col,tablero_usuario,pila_jugadas))
                         listaBotones += [ btn ]
+                        temp_fila_usuario.append(0)
             col += 1
+        tablero_usuario.append(temp_fila_usuario)
         contFila += 1
         fila += 1
     
-    
-
-               
 
     
-def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego):
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,pila_jugadas):
     while obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
@@ -364,7 +431,7 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
             return
 
         # se carga la partida
-        cargar_tablero(ventanaJuego,partida,num_seleccionado)
+        cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas)
             
 
         # se deshabilita el boton
@@ -373,8 +440,10 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         btnTerminarJuego.configure(state= "normal")
         # se habilita el boton de borrar juego
         btnBorrarJuego.configure(state= "normal")
+        # se habilita el boton de borrar jugada
+        btnBorrarJugada.configure(state= "normal")
     
-def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5):
+def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas):
     respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
     if respuesta:
         # Se limpian la seleccion de los botones:
@@ -386,10 +455,10 @@ def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5):
         
         partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
         num_selec[0] = 0
-        cargar_tablero(ventana,partida[0],num_selec)
+        cargar_tablero(ventana,partida[0],num_selec,pila_jugadas)
         messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
              
-def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5):
+def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5,pila_jugadas):
     respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
     if respuesta:
         # Se limpian la seleccion de los botones:
@@ -401,7 +470,7 @@ def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2
         
         partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
         num_seleccionado[0] = 0
-        cargar_tablero(ventana,partida,num_seleccionado)
+        cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas)
         messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
     
@@ -417,6 +486,9 @@ def juego():
     partida = resultado[0]
     num_partida = resultado[1]
     num_seleccionado = [0]
+
+    # TDA = PILA para el control del borrado de jugadas
+    pila_jugadas = []
     
     lista_nivel = ["FÁCIL", "INTERMEDIO", "DIFÍCIL"]
     ventanaJuego = tk.Toplevel()
@@ -476,7 +548,7 @@ def juego():
     btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red")
     btnIniciar.grid(row=8,column=11)
 
-    btnBorrarJugada = tk.Button(ventanaJuego, text="BORRAR JUGADA", bg="cyan")
+    btnBorrarJugada = tk.Button(ventanaJuego, text="BORRAR JUGADA", bg="cyan", state="disabled")
     btnBorrarJugada.grid(row=8,column=12)
 
     btnTerminarJuego = tk.Button(ventanaJuego, text="TERMINAR JUEGO", bg="green", state="disabled")
@@ -489,11 +561,14 @@ def juego():
     btnTop10.grid(row=8,column=15)
 
     # Eventos
-    btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego))
+    btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada, \
+                                                                    pila_jugadas))
     btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion,num_selec=num_seleccionado: \
-                                                        terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5))
+                                                        terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas))
     btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida,num_selec=num_seleccionado: \
-                                                        borrar_juego(event,ventana,obj,dic_config,idpartida,num_selec,n1,n2,n3,n4,n5))  
+                                                        borrar_juego(event,ventana,obj,dic_config,idpartida,num_selec,n1,n2,n3,n4,n5,pila_jugadas))
+    btnBorrarJugada.bind("<1>",lambda event:borrar_jugada(event,ventanaJuego,pila_jugadas))
+
     
     # Guardar / Cargar
     btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO")
