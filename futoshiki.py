@@ -275,8 +275,8 @@ def agregar_digito(event,ventanaConfig,nueva_seleccion,num_seleccionado,n1,n2,n3
         num_seleccionado[0] = 0
 
 def validar_numero_tablero(num,i_fila,i_col,tablero_usuario):
-    print("tablero",tablero_usuario)
-    print("num",num,"i_fila",i_fila,"i_col",i_col)
+    #print("tablero",tablero_usuario)
+    #("num",num,"i_fila",i_fila,"i_col",i_col)
     total_filas = len(tablero_usuario)
     total_columnas = len(tablero_usuario[0])
     
@@ -332,11 +332,14 @@ def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,i_fila,i_
             else:
                 boton.configure(text = num_seleccionado[0])
 
+                # se agrega el nuevo numero al tablero de usuario
+                tablero_usuario[info_posicion["row"]-3][info_posicion["column"]] = num_seleccionado[0]
+
                 # se agrega el numero a la pila de jugadas
                 jugada = (info_posicion["row"],info_posicion["column"])
                 pila_jugadas.append(jugada) # se hace el push a la pila
                 
-def borrar_jugada(event,ventanaJuego,pila_jugadas):
+def borrar_jugada(event,ventanaJuego,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
     if estado_boton != "disabled":
@@ -344,17 +347,24 @@ def borrar_jugada(event,ventanaJuego,pila_jugadas):
             messagebox.showinfo(parent=ventanaJuego,title="Error", message="NO HAY MÁS JUGADAS PARA BORRAR")
             return
         else:
-            posiciones = pila_jugadas.pop()
+            # saco la jugada de la pila
+            posiciones = pila_jugadas.pop()  
             boton = ventanaJuego.grid_slaves(row=posiciones[0], column=posiciones[1])[0]
             boton.configure(text = "")
+
+            # elimino el numero del tablero del usuario y relleno el valor con default de 0:
+            print("posiciones",posiciones)
+            print(tablero_usuario)
+            tablero_usuario[posiciones[0]-3][posiciones[1]] = 0
+            
         
         
     
             
 
-def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas):
+def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas,tablero_usuario):
     listaBotones = []
-    tablero_usuario = []
+    tablero_usuario.clear()
     contFila = 0
     pila_jugadas.clear() # Se limpia la pila de jugadas
 
@@ -419,7 +429,7 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas):
     
 
     
-def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,pila_jugadas):
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario):
     if obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
@@ -451,7 +461,7 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         n5.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,5,num_seleccionado,n1,n2,n3,n4,n5))
 
         # se carga la partida
-        cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas)
+        cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas,tablero_usuario)
             
 
         # se deshabilita el boton
@@ -463,40 +473,62 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         # se habilita el boton de borrar jugada
         btnBorrarJugada.configure(state= "normal")
     
-def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas):
+def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
     if estado_boton != "disabled":
         respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
         if respuesta:
-            # Se limpian la seleccion de los botones:
-            n1.configure(background = "SystemButtonFace")
-            n2.configure(background = "SystemButtonFace")
-            n3.configure(background = "SystemButtonFace")
-            n4.configure(background = "SystemButtonFace")
-            n5.configure(background = "SystemButtonFace")
+            # Se generan nuevos botones para limpiar la seleccion de los botones:
+            n1 = tk.Button(ventana,text="1",compound="c",height=2,width=5)
+            n1.grid(row=3,column=13,padx=50)
+            n2 = tk.Button(ventana,text="2",compound="c",height=2,width=5)
+            n2.grid(row=4,column=13,padx=50)
+            n3 = tk.Button(ventana,text="3",compound="c",height=2,width=5)
+            n3.grid(row=5,column=13,padx=50)
+            n4 = tk.Button(ventana,text="4",compound="c",height=2,width=5)
+            n4.grid(row=6,column=13,padx=50)
+            n5 = tk.Button(ventana,text="5",compound="c",height=2,width=5)
+            n5.grid(row=7,column=13,padx=50)
+
+            n1.bind("<1>",lambda event:agregar_digito(event,ventana,1,num_selec,n1,n2,n3,n4,n5))
+            n2.bind("<1>",lambda event:agregar_digito(event,ventana,2,num_selec,n1,n2,n3,n4,n5))
+            n3.bind("<1>",lambda event:agregar_digito(event,ventana,3,num_selec,n1,n2,n3,n4,n5))
+            n4.bind("<1>",lambda event:agregar_digito(event,ventana,4,num_selec,n1,n2,n3,n4,n5))
+            n5.bind("<1>",lambda event:agregar_digito(event,ventana,5,num_selec,n1,n2,n3,n4,n5))
             
             partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
             num_selec[0] = 0
-            cargar_tablero(ventana,partida[0],num_selec,pila_jugadas)
+            cargar_tablero(ventana,partida[0],num_selec,pila_jugadas,tablero_usuario)
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
              
-def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5,pila_jugadas):
+def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario):
     boton = event.widget
     estado_boton = boton.cget("state")
     if estado_boton != "disabled":
         respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
         if respuesta:
-            # Se limpian la seleccion de los botones:
-            n1.configure(background = "SystemButtonFace")
-            n2.configure(background = "SystemButtonFace")
-            n3.configure(background = "SystemButtonFace")
-            n4.configure(background = "SystemButtonFace")
-            n5.configure(background = "SystemButtonFace")
+            # Se generan nuevos botones para limpiar la seleccion de los botones:
+            n1 = tk.Button(ventana,text="1",compound="c",height=2,width=5)
+            n1.grid(row=3,column=13,padx=50)
+            n2 = tk.Button(ventana,text="2",compound="c",height=2,width=5)
+            n2.grid(row=4,column=13,padx=50)
+            n3 = tk.Button(ventana,text="3",compound="c",height=2,width=5)
+            n3.grid(row=5,column=13,padx=50)
+            n4 = tk.Button(ventana,text="4",compound="c",height=2,width=5)
+            n4.grid(row=6,column=13,padx=50)
+            n5 = tk.Button(ventana,text="5",compound="c",height=2,width=5)
+            n5.grid(row=7,column=13,padx=50)
+
+            n1.bind("<1>",lambda event:agregar_digito(event,ventana,1,num_seleccionado,n1,n2,n3,n4,n5))
+            n2.bind("<1>",lambda event:agregar_digito(event,ventana,2,num_seleccionado,n1,n2,n3,n4,n5))
+            n3.bind("<1>",lambda event:agregar_digito(event,ventana,3,num_seleccionado,n1,n2,n3,n4,n5))
+            n4.bind("<1>",lambda event:agregar_digito(event,ventana,4,num_seleccionado,n1,n2,n3,n4,n5))
+            n5.bind("<1>",lambda event:agregar_digito(event,ventana,5,num_seleccionado,n1,n2,n3,n4,n5))
             
             partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
             num_seleccionado[0] = 0
-            cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas)
+            cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas,tablero_usuario)
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
     
@@ -512,6 +544,7 @@ def juego():
     partida = resultado[0]
     num_partida = resultado[1]
     num_seleccionado = [0]
+    tablero_usuario = []
 
     # TDA = PILA para el control del borrado de jugadas
     pila_jugadas = []
@@ -534,29 +567,14 @@ def juego():
     entryNombre = tk.Entry(ventanaJuego,textvariable=txtNombre,width=20)
     entryNombre.grid(row=2,column=16,ipady=4,pady=(0,20))
 
+    # Botones numeros
+    n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
+    n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
+    n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
+    n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
+    n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
     
-    # CUADRICULA INICIAL
-    '''
-    listaBotones = []
-    cont = 0
-    fila = 3
-    col = 0
-    for i in range(5):
-        col = 0
-        for j in range(5):
-            cont += 1
-            btn = tk.Button(ventanaJuego,text="",compound="c",height=2,width=5,state="disabled")
-            btn.grid(row=fila,column=col)
-            #btn.bind("<1>",lambda event:seleccion_tablero(event,num_seleccionado))          
-            listaBotones += [ btn ] 
-            #if j == 2:
-            #    listaBotones += [ tk.Label(text=">")]
-            #listaBotones[-1].grid(row=fila,column=col)
-            col += 1
-        fila += 1
-    '''
-    
-    # Botones
+    # Botones Opciones
     btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red", fg="white", height=2, width=17)
     btnIniciar.grid(row=5,column=14,padx=3)
 
@@ -574,12 +592,12 @@ def juego():
 
     # Eventos
     btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada, \
-                                                                    pila_jugadas))
+                                                                    n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario))
     btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion,num_selec=num_seleccionado: \
-                                                        terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas))
+                                                        terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario))
     btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida,num_selec=num_seleccionado: \
-                                                        borrar_juego(event,ventana,obj,dic_config,idpartida,num_selec,n1,n2,n3,n4,n5,pila_jugadas))
-    btnBorrarJugada.bind("<1>",lambda event:borrar_jugada(event,ventanaJuego,pila_jugadas))
+                                                        borrar_juego(event,ventana,obj,dic_config,idpartida,num_selec,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario))
+    btnBorrarJugada.bind("<1>",lambda event:borrar_jugada(event,ventanaJuego,pila_jugadas,tablero_usuario))
 
     
     # Guardar / Cargar
