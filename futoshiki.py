@@ -446,7 +446,7 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas,tablero_us
     
 
     
-def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario,dic_config):
+def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,btnGuardar,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario,dic_config):
     if obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
@@ -489,6 +489,9 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         btnBorrarJuego.configure(state= "normal")
         # se habilita el boton de borrar jugada
         btnBorrarJugada.configure(state= "normal")
+        # se habilita el boton de guardar juego
+        btnGuardar.configure(state= "normal")
+        
 
 def generar_nuevo_juego(event,ventana,dic_config,num_selec,pila_jugadas,tablero_usuario):
     # Se generan nuevos botones para limpiar la seleccion de los botones:
@@ -552,6 +555,30 @@ def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2
             cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas,tablero_usuario,dic_config)
             messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
+
+def guardar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):
+    boton = event.widget
+    estado_boton = boton.cget("state")
+    if estado_boton != "disabled":
+        #se guardan los datos de la partida en el archivo futoshiki2021juegoactual.dat
+        f=open("futoshiki2021juegoactual.dat","wb")
+        pickle.dump(dic_configuracion,f) #configuracion de la partida
+        pickle.dump(txtNombre.get(),f)   #nombre
+        pickle.dump(tablero_usuario,f)   #tablero del usuario
+        f.close()
+        messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
+
+
+def cargar_juego(event,ventana,dic_configuracion,txtNombre,tablero_usuario):    
+    #se guardan los datos de la partida en el archivo futoshiki2021juegoactual.dat
+    f=open("futoshiki2021juegoactual.dat","wb")
+    pickle.dump(dic_configuracion,f) #configuracion de la partida
+    pickle.dump(txtNombre.get(),f)   #nombre
+    pickle.dump(tablero_usuario,f)   #tablero del usuario
+    f.close()
+    messagebox.showinfo(parent=ventana,title="Confirmación", message="JUEGO GUARDADO EXITOSAMENTE")
+
+
     
 
 
@@ -613,7 +640,7 @@ def juego():
 
     # Eventos
     btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada, \
-                                                                    n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario,dic_configuracion))
+                                                                    btnGuardar,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario,dic_configuracion))
     btnTerminarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnTerminarJuego,dic_config=dic_configuracion,num_selec=num_seleccionado: \
                                                         terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas,tablero_usuario))
     btnBorrarJuego.bind("<1>",lambda event,ventana=ventanaJuego,obj=btnBorrarJuego,dic_config=dic_configuracion,idpartida=num_partida,num_selec=num_seleccionado: \
@@ -622,11 +649,13 @@ def juego():
 
     
     # Guardar / Cargar
-    btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO",height=2, width=17)
+    btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO",height=2, width=17,state="disabled")
+    btnGuardar.bind("<1>",lambda event:guardar_juego(event,ventanaJuego,dic_configuracion,txtNombre,tablero_usuario))
     btnGuardar.grid(row=8,column=16)
 
     btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO",height=2, width=17)
     btnCargar.grid(row=8,column=17)
+    btnCargar.bind("<1>",lambda event:cargar_juego(event,ventanaJuego,dic_configuracion,txtNombre,tablero_usuario))
 
     
     
