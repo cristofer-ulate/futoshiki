@@ -132,7 +132,7 @@ def configuracion():
     
     rbFacil = tk.Radiobutton(ventanaConfig,text="Fácil",variable=CheckNivel,value=0,tristatevalue=0)
     rbIntermedio = tk.Radiobutton(ventanaConfig,text="Intermedio",variable=CheckNivel,value=1,tristatevalue=1)
-    rbAvanzado = tk.Radiobutton(ventanaConfig,text="Avanzado",variable=CheckNivel,value=2,tristatevalue=2)
+    rbAvanzado = tk.Radiobutton(ventanaConfig,text="Difícil",variable=CheckNivel,value=2,tristatevalue=2)
 
     CheckNivel.set(dic_configuracion["nivel"])    
 
@@ -337,13 +337,16 @@ def seleccion_tablero(event,ventanaJuego,num_seleccionado,es_plantilla,i_fila,i_
                 pila_jugadas.append(jugada) # se hace el push a la pila
                 
 def borrar_jugada(event,ventanaJuego,pila_jugadas):
-    if len(pila_jugadas) == 0:
-        messagebox.showinfo(parent=ventanaJuego,title="Error", message="NO HAY MÁS JUGADAS PARA BORRAR")
-        return
-    else:
-        posiciones = pila_jugadas.pop()
-        boton = ventanaJuego.grid_slaves(row=posiciones[0], column=posiciones[1])[0]
-        boton.configure(text = "")
+    boton = event.widget
+    estado_boton = boton.cget("state")
+    if estado_boton != "disabled":
+        if len(pila_jugadas) == 0:
+            messagebox.showinfo(parent=ventanaJuego,title="Error", message="NO HAY MÁS JUGADAS PARA BORRAR")
+            return
+        else:
+            posiciones = pila_jugadas.pop()
+            boton = ventanaJuego.grid_slaves(row=posiciones[0], column=posiciones[1])[0]
+            boton.configure(text = "")
         
         
     
@@ -417,7 +420,7 @@ def cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas):
 
     
 def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada,pila_jugadas):
-    while obj['state'] == "normal":
+    if obj['state'] == "normal":
         if len(txtNombre.get()) < 1 or len(txtNombre.get()) > 20:
             messagebox.showerror(parent=ventanaJuego,title="Error", message="DEBE INGRESAR UN NOMBRE QUE CONTENGA DE 1 A 20 CARACTERES")
             return
@@ -429,6 +432,23 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
             messagebox.showerror(parent=ventanaJuego,title="Error", message="NO HAY PARTIDAS PARA ESTE NIVEL")
             ventanaJuego.destroy()
             return
+
+        n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
+        n1.grid(row=3,column=13,padx=50)
+        n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
+        n2.grid(row=4,column=13,padx=50)
+        n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
+        n3.grid(row=5,column=13,padx=50)
+        n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
+        n4.grid(row=6,column=13,padx=50)
+        n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
+        n5.grid(row=7,column=13,padx=50)
+
+        n1.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,1,num_seleccionado,n1,n2,n3,n4,n5))
+        n2.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,2,num_seleccionado,n1,n2,n3,n4,n5))
+        n3.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,3,num_seleccionado,n1,n2,n3,n4,n5))
+        n4.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,4,num_seleccionado,n1,n2,n3,n4,n5))
+        n5.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,5,num_seleccionado,n1,n2,n3,n4,n5))
 
         # se carga la partida
         cargar_tablero(ventanaJuego,partida,num_seleccionado,pila_jugadas)
@@ -444,34 +464,40 @@ def iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnT
         btnBorrarJugada.configure(state= "normal")
     
 def terminar_juego(event,ventana,obj,dic_config,num_selec,n1,n2,n3,n4,n5,pila_jugadas):
-    respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
-    if respuesta:
-        # Se limpian la seleccion de los botones:
-        n1.configure(background = "SystemButtonFace")
-        n2.configure(background = "SystemButtonFace")
-        n3.configure(background = "SystemButtonFace")
-        n4.configure(background = "SystemButtonFace")
-        n5.configure(background = "SystemButtonFace")
-        
-        partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
-        num_selec[0] = 0
-        cargar_tablero(ventana,partida[0],num_selec,pila_jugadas)
-        messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
+    boton = event.widget
+    estado_boton = boton.cget("state")
+    if estado_boton != "disabled":
+        respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE TERMINAR EL JUEGO (SI o NO)?")
+        if respuesta:
+            # Se limpian la seleccion de los botones:
+            n1.configure(background = "SystemButtonFace")
+            n2.configure(background = "SystemButtonFace")
+            n3.configure(background = "SystemButtonFace")
+            n4.configure(background = "SystemButtonFace")
+            n5.configure(background = "SystemButtonFace")
+            
+            partida = obtener_partida_aleatoria(dic_configuracion["nivel"])
+            num_selec[0] = 0
+            cargar_tablero(ventana,partida[0],num_selec,pila_jugadas)
+            messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO TERMINADO. SE HA CARGADO UN JUEGO NUEVO")
              
 def borrar_juego(event,ventana,obj,dic_config,num_partida,num_seleccionado,n1,n2,n3,n4,n5,pila_jugadas):
-    respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
-    if respuesta:
-        # Se limpian la seleccion de los botones:
-        n1.configure(background = "SystemButtonFace")
-        n2.configure(background = "SystemButtonFace")
-        n3.configure(background = "SystemButtonFace")
-        n4.configure(background = "SystemButtonFace")
-        n5.configure(background = "SystemButtonFace")
-        
-        partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
-        num_seleccionado[0] = 0
-        cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas)
-        messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
+    boton = event.widget
+    estado_boton = boton.cget("state")
+    if estado_boton != "disabled":
+        respuesta = messagebox.askyesno(parent=ventana,title="Confirmación", message="¿ESTÁ SEGURO DE BORRAR EL JUEGO (SI o NO)")
+        if respuesta:
+            # Se limpian la seleccion de los botones:
+            n1.configure(background = "SystemButtonFace")
+            n2.configure(background = "SystemButtonFace")
+            n3.configure(background = "SystemButtonFace")
+            n4.configure(background = "SystemButtonFace")
+            n5.configure(background = "SystemButtonFace")
+            
+            partida = obtener_partida_x_nivel_id(dic_config["nivel"],num_partida)
+            num_seleccionado[0] = 0
+            cargar_tablero(ventana,partida,num_seleccionado,pila_jugadas)
+            messagebox.showinfo(parent=ventana,title="Mensaje", message="JUEGO BORRADO. SE HA REINICIADO EL JUEGO")
 
     
 
@@ -494,16 +520,19 @@ def juego():
     ventanaJuego = tk.Toplevel()
     ventanaJuego.title("FUTOSHIKI")
     ventanaJuego.geometry("1400x600")
+
+    ventanaJuego.columnconfigure(0, pad=(10))
+    
     lblTitulo = tk.Label(ventanaJuego, text="FUTOSHIKI")
     lblTitulo.grid(row=0,column=10)
     lblNivel = tk.Label(ventanaJuego, text="NIVEL" + " " + lista_nivel[dic_configuracion["nivel"]])
     lblNivel.grid(row=1,column=10)
 
     lblNombre = tk.Label(ventanaJuego, text="Nombre del jugador:")
-    lblNombre.grid(row=2,column=11)
+    lblNombre.grid(row=2,column=15,ipady=4,pady=(0,20))
     txtNombre = tk.StringVar()
-    entryNombre = tk.Entry(ventanaJuego,textvariable=txtNombre)
-    entryNombre.grid(row=2,column=12)
+    entryNombre = tk.Entry(ventanaJuego,textvariable=txtNombre,width=20)
+    entryNombre.grid(row=2,column=16,ipady=4,pady=(0,20))
 
     
     # CUADRICULA INICIAL
@@ -526,39 +555,22 @@ def juego():
             col += 1
         fila += 1
     '''
-        
-    n1 = tk.Button(ventanaJuego,text="1",compound="c",height=2,width=5)
-    n1.grid(row=3,column=10,padx=50)
-    n2 = tk.Button(ventanaJuego,text="2",compound="c",height=2,width=5)
-    n2.grid(row=4,column=10,padx=50)
-    n3 = tk.Button(ventanaJuego,text="3",compound="c",height=2,width=5)
-    n3.grid(row=5,column=10,padx=50)
-    n4 = tk.Button(ventanaJuego,text="4",compound="c",height=2,width=5)
-    n4.grid(row=6,column=10,padx=50)
-    n5 = tk.Button(ventanaJuego,text="5",compound="c",height=2,width=5)
-    n5.grid(row=7,column=10,padx=50)
-
-    n1.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,1,num_seleccionado,n1,n2,n3,n4,n5))
-    n2.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,2,num_seleccionado,n1,n2,n3,n4,n5))
-    n3.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,3,num_seleccionado,n1,n2,n3,n4,n5))
-    n4.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,4,num_seleccionado,n1,n2,n3,n4,n5))
-    n5.bind("<1>",lambda event:agregar_digito(event,ventanaJuego,5,num_seleccionado,n1,n2,n3,n4,n5))
     
     # Botones
-    btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red")
-    btnIniciar.grid(row=8,column=11)
+    btnIniciar = tk.Button(ventanaJuego, text="INICIAR JUEGO", bg="red", fg="white", height=2, width=17)
+    btnIniciar.grid(row=5,column=14,padx=3)
 
-    btnBorrarJugada = tk.Button(ventanaJuego, text="BORRAR JUGADA", bg="cyan", state="disabled")
-    btnBorrarJugada.grid(row=8,column=12)
+    btnBorrarJugada = tk.Button(ventanaJuego,text="BORRAR JUGADA",bg="cyan", fg="black", state="disabled", height=2, width=17)
+    btnBorrarJugada.grid(row=5,column=15,padx=3)
 
-    btnTerminarJuego = tk.Button(ventanaJuego, text="TERMINAR JUEGO", bg="green", state="disabled")
-    btnTerminarJuego.grid(row=8,column=13)
+    btnTerminarJuego = tk.Button(ventanaJuego,text="TERMINAR JUEGO",bg="#5ebf78", fg="black", state="disabled", height=2, width=17)
+    btnTerminarJuego.grid(row=5,column=16,padx=3)
 
-    btnBorrarJuego = tk.Button(ventanaJuego, text="BORRAR JUEGO", bg="violet",state="disabled")
-    btnBorrarJuego.grid(row=8,column=14)
+    btnBorrarJuego = tk.Button(ventanaJuego,text="BORRAR JUEGO",bg="violet", fg="white", state="disabled", height=2, width=17)
+    btnBorrarJuego.grid(row=5,column=17,padx=3)
 
-    btnTop10 = tk.Button(ventanaJuego, text="TOP 10", bg="yellow")
-    btnTop10.grid(row=8,column=15)
+    btnTop10 = tk.Button(ventanaJuego,text="TOP 10",bg="yellow", height=2, width=17)
+    btnTop10.grid(row=5,column=18,padx=3)
 
     # Eventos
     btnIniciar.bind("<1>",lambda event,obj=btnIniciar:iniciar_juego(event,ventanaJuego,txtNombre,partida,num_seleccionado,obj,btnTerminarJuego,btnBorrarJuego,btnBorrarJugada, \
@@ -571,11 +583,11 @@ def juego():
 
     
     # Guardar / Cargar
-    btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO")
-    btnGuardar.grid(row=9,column=16)
+    btnGuardar = tk.Button(ventanaJuego, text="GUARDAR JUEGO",height=2, width=17)
+    btnGuardar.grid(row=8,column=16)
 
-    btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO")
-    btnCargar.grid(row=9,column=17)
+    btnCargar = tk.Button(ventanaJuego, text="CARGAR JUEGO",height=2, width=17)
+    btnCargar.grid(row=8,column=17)
 
     
     
@@ -604,34 +616,11 @@ def acerca_de():
 #Entradas: ninguna
 #Salidas: ninguna
 def ayuda():
-    ventanaAyuda = tk.Toplevel()
-    ventanaAyuda.title("FUTOSHIKI – AYUDA")
-    ventanaAyuda.geometry("800x600")
-    lblTitulo = tk.Label(ventanaAyuda, text="FUTOSHIKI - AYUDA")
-    lblTitulo.grid(row=0,column=0,pady=13)
-
-    entryAyuda = tk.Text(ventanaAyuda,height=40,width=80)
-    entryAyuda.grid(row=1,column=0,padx=30)
-
-    # Lectura delPDF:
-    # se obtiene el archivo a leer
-    pdf_archivo = open('manual_de_usuario_ parqueo.pdf', 'rb')
-      
-    # se crea una variable lectora
-    lector_pdf = PyPDF2.PdfFileReader(pdf_archivo)
-
-    texto = ""     
-    for pagina in lector_pdf.pages:
-        contenido = pagina.extractText()
-        texto += contenido
-      
-    # se cierra la variable con la referencia al archivo
-    pdf_archivo.close()
-
-    entryAyuda.insert(1.0,texto)
+    import webbrowser
+    path = 'manual_de_usuario_ futoshiki.pdf'
+    webbrowser.open_new(path)
 
         
-
     
 #VENTANA PRINCIPAL:
 
@@ -654,7 +643,7 @@ lblBienvenido = tk.Label(ventana, text="Bienvenido al Juego de Futoshiki")
 lblBienvenido.pack(pady=(40, 10))
 lblBienvenido.config(font=("Arial", 20))
 
-foto = tk.PhotoImage(file='parqueo.gif')
+foto = tk.PhotoImage(file='portada.gif')
 lblFoto = tk.Label(ventana, image=foto)
 lblFoto.pack()
 
